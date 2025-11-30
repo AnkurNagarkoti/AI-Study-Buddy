@@ -30,14 +30,26 @@ if 'username' not in st.session_state:
     st.session_state.username = None
 if 'current_page' not in st.session_state:
     st.session_state.current_page = "Auth"
+if 'logout_pending' not in st.session_state:
+    st.session_state.logout_pending = False
 
-# Check for cookies on load
-cookies = cookie_manager.get_all()
-if not st.session_state.token and "token" in cookies:
-    st.session_state.token = cookies["token"]
-    if "username" in cookies:
-        st.session_state.username = cookies["username"]
+# Handle logout completion after page reload
+if st.session_state.logout_pending:
+    # Clear session state after cookies have been cleared by JavaScript
+    st.session_state.token = None
+    st.session_state.username = None
+    st.session_state.current_page = "Auth"
+    st.session_state.logout_pending = False
     st.rerun()
+
+# Check for cookies on load (only if not logging out)
+if not st.session_state.logout_pending:
+    cookies = cookie_manager.get_all(key="get_all")
+    if not st.session_state.token and "token" in cookies:
+        st.session_state.token = cookies["token"]
+        if "username" in cookies:
+            st.session_state.username = cookies["username"]
+        st.rerun()
 
 # Navigation Logic
 def navigate_to(page):
@@ -45,13 +57,66 @@ def navigate_to(page):
     st.rerun()
 
 def logout():
-    st.session_state.token = None
-    st.session_state.username = None
-    st.session_state.current_page = "Auth"
-    cookie_manager.delete("token")
-    cookie_manager.delete("username")
-    time.sleep(1) # Wait for cookie deletion
-    st.rerun()
+    """
+    Two-phase logout function:
+    Phase 1: Clear cookies with JavaScript and reload page
+    Phase 2: Clear session state after reload
+    """
+    # Set logout pending flag
+    st.session_state.logout_pending = True
+    
+    # Delete cookies using cookie_manager (server-side)
+    try:
+        current_cookies = cookie_manager.get_all(key="get_all_logout")
+        
+        if "token" in current_cookies:
+            cookie_manager.delete("token", key="delete_token")
+        
+        if "username" in current_cookies:
+            cookie_manager.delete("username", key="delete_username")
+    except Exception as e:
+        # Log error but continue with logout
+        pass
+    
+    # Use JavaScript to clear all client-side storage, cookies, and reload
+    st.components.v1.html(
+        """
+        <script>
+            (function() {
+                try {
+                    // Clear localStorage and sessionStorage
+                    window.localStorage.clear();
+                    window.sessionStorage.clear();
+                    
+                    // Delete specific cookies by name
+                    function deleteCookie(name) {
+                        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname + ';';
+                    }
+                    
+                    deleteCookie('token');
+                    deleteCookie('username');
+                    
+                    // Also clear all cookies as a fallback
+                    document.cookie.split(';').forEach(function(cookie) {
+                        var name = cookie.split('=')[0].trim();
+                        deleteCookie(name);
+                    });
+                    
+                    // Reload page after clearing cookies (this ensures cookies are cleared before next run)
+                    setTimeout(function() {
+                        window.location.href = window.location.pathname;
+                    }, 100);
+                } catch (e) {
+                    console.error('Logout cleanup error:', e);
+                    // Still reload even if there's an error
+                    window.location.href = window.location.pathname;
+                }
+            })();
+        </script>
+        """,
+        height=0,
+    )
 
 # Sidebar (Only show if logged in)
 if st.session_state.token:
