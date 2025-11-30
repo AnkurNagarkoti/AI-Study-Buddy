@@ -1,0 +1,24 @@
+# Python cache and environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+
+# Jupyter notebooks
+*.ipynb_checkpoints
+
+# Streamlit/IDE configs
+.streamlit/
+.idea/
+.vscode/
+
+# Local files and secrets
+.env
+*.env
+*.db
+*.log
+.gemini/
+tmp/
