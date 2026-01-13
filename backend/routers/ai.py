@@ -82,3 +82,16 @@ def summarize(request: SummaryRequest, background_tasks: BackgroundTasks, curren
         return {"summary": summary}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/history")
+def get_history(limit: int = 100, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    """Return flattened chat message list for the current user (user then assistant pairs)."""
+    statement = select(ChatHistory).where(ChatHistory.user_id == current_user.id).order_by(ChatHistory.timestamp)
+    results = session.exec(statement).all()
+    messages = []
+    for h in results[-limit:]:
+        # ensure chronological order
+        messages.append({"role": "user", "content": h.query, "timestamp": h.timestamp.isoformat()})
+        messages.append({"role": "assistant", "content": h.response, "timestamp": h.timestamp.isoformat()})
+    return messages

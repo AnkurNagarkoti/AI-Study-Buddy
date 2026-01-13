@@ -5,7 +5,7 @@ def notes_page():
     st.title("📝 My Notes")
     
     # --- Sidebar for Folders ---
-    folders = get_folders()
+    folders = get_folders(st.session_state.get("token"))
     if not folders:
         folders = ["General"]
         
@@ -33,7 +33,7 @@ def notes_page():
     # --- Display Notes in Selected Folder ---
     st.subheader(f"📂 {current_folder}")
     
-    all_notes = get_notes()
+    all_notes = get_notes(st.session_state.get("token"))
     # Filter notes by folder
     folder_notes = [n for n in all_notes if n.get("folder", "General") == current_folder]
     

@@ -6,7 +6,7 @@ import datetime
 def dashboard_page():
     st.title("📊 Progress Dashboard")
     
-    history = get_quiz_history()
+    history = get_quiz_history(st.session_state.get("token"))
     
     if not history:
         st.info("No quiz history found. Take a quiz to see your progress!")

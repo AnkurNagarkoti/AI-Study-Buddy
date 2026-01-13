@@ -1,11 +1,11 @@
 import streamlit as st
-from frontend.api_client import chat_with_ai, summarize_text, save_quiz_score, extract_text_from_pdf, create_note, get_folders
+from frontend.api_client import chat_with_ai, summarize_text, save_quiz_score, extract_text_from_pdf, create_note, get_folders, get_chat_history
 import random
 import time
 
 @st.dialog("📝 Add to Notes")
 def add_to_notes_dialog(initial_text):
-    folders = get_folders()
+    folders = get_folders(st.session_state.get("token"))
     
     # Initialize session state for this dialog if not present
     if "note_folder_selection" not in st.session_state:
@@ -66,7 +66,12 @@ def study_page():
     with tab1:
         st.header("AI Tutor")
         if "messages" not in st.session_state:
-            st.session_state.messages = []
+                # Try to load persisted chat history from backend for this user
+                hist = get_chat_history(st.session_state.get("token"))
+                if hist:
+                    st.session_state.messages = hist
+                else:
+                    st.session_state.messages = []
 
         for i, msg in enumerate(st.session_state.messages):
             with st.chat_message(msg["role"]):

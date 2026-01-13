@@ -25,15 +25,16 @@ def register(username, password):
     response = requests.post(f"{API_URL}/auth/register", json={"username": username, "hashed_password": password})
     return response.status_code == 200
 
-def get_headers():
-    token = st.session_state.get("token")
+def get_headers(token=None):
+    if token is None:
+        token = st.session_state.get("token")
     if token:
         return {"Authorization": f"Bearer {token}"}
     return {}
 
 @st.cache_data(ttl=10, show_spinner=False)
-def get_notes():
-    response = requests.get(f"{API_URL}/notes/", headers=get_headers())
+def get_notes(token=None):
+    response = requests.get(f"{API_URL}/notes/", headers=get_headers(token))
     if response.status_code == 200:
         return response.json()
     return []
@@ -70,8 +71,8 @@ def save_quiz_score(topic, score, total):
     return response.status_code == 200
 
 @st.cache_data(ttl=10, show_spinner=False)
-def get_quiz_history():
-    response = requests.get(f"{API_URL}/quiz/history", headers=get_headers())
+def get_quiz_history(token=None):
+    response = requests.get(f"{API_URL}/quiz/history", headers=get_headers(token))
     if response.status_code == 200:
         return response.json()
     return []
@@ -89,8 +90,15 @@ def generate_quiz(topic=None, from_history=False):
     return None
 
 @st.cache_data(ttl=10, show_spinner=False)
-def get_folders():
-    response = requests.get(f"{API_URL}/notes/folders", headers=get_headers())
+def get_folders(token=None):
+    response = requests.get(f"{API_URL}/notes/folders", headers=get_headers(token))
     if response.status_code == 200:
         return response.json()
     return ["General"]
+
+
+def get_chat_history(token=None, limit=100):
+    response = requests.get(f"{API_URL}/ai/history", params={"limit": limit}, headers=get_headers(token))
+    if response.status_code == 200:
+        return response.json()
+    return []

@@ -123,11 +123,8 @@ StudyBuddy/
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Author's
 
-**Ammaar Ahmad Khan**  
-- GitHub: [@GPA95](https://github.com/GPA95)
+**Ankur ,Sanjay, Jayesh , Priyanshu**  
 
-🌟 If you find this repository useful, please give it a star! 🌟
 
----
